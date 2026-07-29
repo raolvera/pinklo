@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emoji Drop 3D - 360 Space Edition</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background-color: #02040a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      overflow: hidden;
+      min-height: 100vh;
+      width: 100vw;
+      padding-top: 92px;
+      padding-bottom: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      touch-action: none;
+    }
+
+    /* TOP LEFT HUD PANEL */
+    .ui-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 12;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(2, 4, 10, 0.92);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.14);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(18px);
+    }
+    .ui-overlay h1 {
+      order: 0;
+      flex: 1 1 180px;
+      min-width: 0;
+      max-width: calc(100% - 180px);
+      text-align: left;
+      margin: 0;
+      font-size: 1.45rem;
+      letter-spacing: 1.6px;
+      line-height: 1.1;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .ui-overlay .hud,
+    .ui-overlay .audio-player {
+      order: 1;
+      flex: 1 1 auto;
+      max-width: 320px;
+      width: 100%;
+      margin: 0;
+    }
+    .ui-overlay .hud {
+      background: rgba(5, 12, 22, 0.94);
+      border-radius: 18px;
+      border: 1px solid rgba(0, 240, 255, 0.18);
+      padding: 12px 14px;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+    }
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      background: linear-gradient(135deg, #00f0ff, #ff007f, #7000ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 18px rgba(0, 240, 255, 0.8));
+    }
+    .hud {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(5, 12, 22, 0.96);
+      backdrop-filter: blur(20px);
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      box-shadow: 0 0 28px rgba(0, 240, 255, 0.26);
+      width: 100%;
+    }
+    .hud-stats-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .hud-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      flex: 1 1 120px;
+      min-width: 90px;
+    }
+    .hud-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      color: #38bdf8;
+    }
+    .hud-value {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #00f0ff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+    }
+    .level-badge {
+      background: linear-gradient(135deg, #7000ff, #ff007f);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      box-shadow: 0 0 12px rgba(255, 0, 127, 0.6);
+      text-transform: uppercase;
+    }
+
+    /* LEADERBOARD BUTTON & DROPDOWN */
+    .leaderboard-btn-under {
+      order: 0;
+      align-self: flex-start;
+      margin-left: auto;
+      background: linear-gradient(135deg, #7000ff, #00f0ff);
+      color: #fff;
+      border: none;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.5);
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      width: auto;
+      max-width: 160px;
+      text-align: center;
+      flex: 0 0 auto;
+    }
+    .leaderboard-btn-under:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
+    }
+    .leaderboard-dropdown {
+      order: 2;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0, 1, 0, 1);
+      width: 100%;
+      background: rgba(5, 12, 22, 0.96);
+      backdrop-filter: blur(20px);
+      border-radius: 14px;
+      border: 0px solid rgba(0, 240, 255, 0.3);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.22);
+    }
+    .leaderboard-dropdown.open {
+      max-height: 350px;
+      border-width: 1px;
+      padding: 14px;
+      transition: max-height 0.4s ease-in-out;
+    }
+    .leaderboard-title {
+      font-size: 0.9rem;
+      font-weight: 900;
+      color: #00f0ff;
+      text-align: center;
+      letter-spacing: 1.5px;
+      margin-bottom: 10px;
+    }
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .leaderboard-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background: #121c33;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+    .leaderboard-row.user-row {
+      border: 1px solid #ff007f;
+      background: rgba(255, 0, 127, 0.25);
+      color: #00f0ff;
+    }
+
+    /* SPIN WHEEL MODAL */
+    .wheel-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 100;
+      background: rgba(10, 16, 32, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 24px 26px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 0, 127, 0.6);
+      box-shadow: 0 0 40px rgba(255, 0, 127, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: min(90vw, 320px);
+      transition: all 0.3s ease;
+    }
+    .wheel-modal.open {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .wheel-container {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      border: 6px solid #00f0ff;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: conic-gradient(#121c33 0 90deg, #ff007f 90deg 180deg, #7000ff 180deg 270deg, #00f0ff 270deg 360deg);
+      transition: transform 3s cubic-bezier(0.15, 0.9, 0.15, 1);
+    }
+    .wheel-center-btn {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #00f0ff;
+      color: #000;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid #fff;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.8);
+      z-index: 5;
+    }
+
+    /* AUDIO CONTROLS TOP RIGHT */
+    .audio-player {
+      position: relative;
+      top: auto;
+      left: auto;
+      transform: none;
+      bottom: auto;
+      z-index: 12;
+      background: rgba(5, 12, 22, 0.96);
+      backdrop-filter: blur(20px);
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(112, 0, 255, 0.4);
+      box-shadow: 0 0 28px rgba(112, 0, 255, 0.24);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 340px;
+      margin: 0;
+    }
+    .audio-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #cbd5e1;
+      font-weight: 700;
+      width: 100%;
+    }
+    .track-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #00f0ff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+    }
+    .audio-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+    #color-picker {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .audio-btn {
+      flex: 1 1 30%;
+      min-width: 90px;
+      background: #121c33;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    #close-wheel-btn {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #cbd5e1;
+    }
+    .audio-btn:hover {
+      background: #7000ff;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(112, 0, 255, 0.7);
+    }
+    .audio-btn.active {
+      background: #ff007f;
+      border-color: #ff007f;
+    }
+
+    /* CONTROLS PANEL BOTTOM RIGHT */
+    .controls-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 12;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      background: rgba(2, 4, 10, 0.96);
+      backdrop-filter: blur(20px);
+      padding: 18px 16px 22px;
+      border-top: 1px solid rgba(0, 240, 255, 0.14);
+      box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.35);
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      border-radius: 20px 20px 0 0;
+      overflow: visible;
+    }
+    .controls-top {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      gap: 12px;
+      align-items: stretch;
+      justify-content: space-between;
+      position: relative;
+    }
+    .panel-main {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #00f0ff;
+    }
+    .menu-toggle-btn {
+      display: none;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      width: 48px;
+      min-width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: 800;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.15);
+      transition: all 0.2s ease;
+    }
+    .menu-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
+    .controls-menu {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 16px);
+      left: 0;
+      right: 0;
+      background: rgba(2, 4, 10, 0.95);
+      border-radius: 20px;
+      padding: 18px 16px 22px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      flex-direction: column;
+      gap: 12px;
+      max-height: 68vh;
+      overflow-y: auto;
+      z-index: 13;
+    }
+    .controls-menu.open {
+      display: flex;
+    }
+    .mobile-only-sections {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+    .mobile-only-sections .audio-controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    /* Title bar inside the mobile hamburger menu */
+    .mobile-menu-header {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.18);
+      margin-bottom: 2px;
+    }
+    .mobile-menu-title {
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #00f0ff, #ff007f, #7000ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 10px rgba(0,240,255,0.6));
+    }
+    .panel-section {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      width: 100%;
+    }
+    .section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #38bdf8;
+    }
+    .options-row {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      width: 100%;
+    }
+    .type-btn, .count-btn, .emoji-btn {
+      background: #121c33;
+      color: #cbd5e1;
+      border: 1px solid #1e2e52;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+      min-width: auto;
+      flex: none;
+    }
+    .emoji-btn {
+      font-size: 1.25rem;
+      padding: 10px 8px;
+      min-height: 48px;
+    }
+    .color-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 8px currentColor;
+      flex: 0 0 auto;
+    }
+    .color-btn.active {
+      transform: scale(1.25);
+      border-color: #ffffff;
+      box-shadow: 0 0 15px currentColor;
+    }
+    .type-btn.active, .count-btn.active, .emoji-btn.active {
+      background: linear-gradient(135deg, #00f0ff, #ff007f);
+      color: #fff;
+      border-color: #00f0ff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.8);
+    }
+    .btn-disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      filter: grayscale(1);
+    }
+    button.drop-btn {
+      background: linear-gradient(135deg, #00f0ff, #ff007f);
+      color: #fff;
+      border: none;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.7);
+      transition: all 0.2s ease;
+      width: 100%;
+      text-transform: uppercase;
+      min-height: 54px;
+    }
+    button.drop-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 35px rgba(255, 0, 127, 0.9);
+    }
+    .hint {
+      position: fixed;
+      bottom: 88px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 11;
+      font-size: 0.78rem;
+      color: #38bdf8;
+      pointer-events: none;
+      text-align: center;
+      width: min(90vw, 340px);
+    }
+
+    /* ── MOBILE TITLE BAR (top of screen, phones/tablets only) ── */
+    .mobile-title-bar {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 15;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      background: rgba(2, 4, 10, 0.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      pointer-events: none;
+    }
+    .mobile-title-bar span {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #00f0ff, #ff007f, #7000ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.7));
+    }
+
+    @media (max-width: 1024px) {
+      /* ── Hide desktop-only panels ── */
+      .ui-overlay { display: none !important; }
+      #desktop-audio-player { display: none !important; }
+
+      /* Show the fixed top title bar on mobile/tablet */
+      .mobile-title-bar { display: flex !important; }
+
+      /* Show mobile-only content inside hamburger */
+      .mobile-only-sections { display: flex !important; }
+      .mobile-menu-header { display: flex !important; }
+
+      /* ── Controls panel: full-width bottom strip ── */
+      .controls-panel {
+        width: 100%;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 20px 20px 0 0;
+        padding: 12px 16px 18px;
+        border-top: 1px solid rgba(0, 240, 255, 0.18);
+      }
+
+      /* ── Bottom bar: [PLINKO] [DROP button] [☰] in a row ── */
+      .controls-top {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+      }
+      .panel-main {
+        flex: 1;
+        flex-direction: row;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      /* Hide "Plinko" label — drop button speaks for itself */
+      .panel-heading { display: none; }
+      button.drop-btn {
+        flex: 1;
+        padding: 14px 16px;
+        font-size: 1rem;
+        min-height: 52px;
+        width: auto;
+      }
+      /* Hamburger goes to the LEFT */
+      .menu-toggle-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 52px;
+        width: 52px;
+        height: 52px;
+        min-width: 52px;
+        order: -1;
+      }
+
+      /* ── Hamburger menu: slide-up full-width panel ── */
+      .controls-menu {
+        display: none;
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        max-height: calc(100vh - 90px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 20px;
+        padding: 18px 16px 22px;
+        border: 1px solid rgba(0, 240, 255, 0.2);
+      }
+      .controls-menu.open { display: flex; }
+
+      /* ── Buttons in menu: horizontal rows ── */
+      .controls-menu .options-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .controls-menu .type-btn,
+      .controls-menu .count-btn {
+        flex: 1 1 auto;
+        width: auto;
+        padding: 10px 12px;
+        font-size: 0.9rem;
+      }
+      .controls-menu .emoji-btn {
+        flex: 0 0 auto;
+        width: auto;
+        min-height: 44px;
+        padding: 8px 10px;
+      }
+      .audio-btn { min-width: auto; }
+      .section-title { font-size: 0.65rem; }
+    }
+
+    @media (min-width: 1025px) {
+      /* Remove mobile body padding - panels are fixed, not in flow */
+      body {
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+
+      /* ── LEFT COLUMN: title + HUD + leaderboard ── */
+      .ui-overlay {
+        position: fixed;
+        top: 20px;
+        left: 24px;
+        right: auto;        /* override base right:0 */
+        width: 290px;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        gap: 10px;
+        padding: 0;
+        background: transparent;
+        border-bottom: none;
+        box-shadow: none;
+        backdrop-filter: none;
+      }
+      .ui-overlay h1 {
+        flex: none;
+        max-width: 100%;
+        font-size: 2.5rem;
+        letter-spacing: 3px;
+      }
+      .ui-overlay .hud {
+        order: unset;
+        flex: none;
+        max-width: 100%;
+        width: 100%;
+      }
+      /* Leaderboard button fills width and sits directly below HUD */
+      .leaderboard-btn-under {
+        order: unset;
+        align-self: stretch;
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+      }
+      /* Dropdown also full width under the button */
+      .leaderboard-dropdown {
+        order: unset;
+        width: 100%;
+      }
+
+      .hud-stats-row {
+        flex-direction: row;
+        flex-wrap: nowrap;
+      }
+
+      /* ── TOP RIGHT: audio player ── */
+      .audio-player {
+        position: fixed;
+        top: 20px;
+        right: 24px;
+        left: auto;
+        bottom: auto;
+        width: auto;
+        min-width: 270px;
+        max-width: 340px;
+        margin: 0;
+      }
+      .audio-controls {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      /* ── BOTTOM RIGHT: controls + drop button ── */
+      .controls-panel {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        left: auto;
+        top: auto;
+        width: 320px;
+        max-width: 340px;
+        border-radius: 18px;
+        border: 1px solid rgba(0, 240, 255, 0.5);
+        border-top: 1px solid rgba(0, 240, 255, 0.5);
+        box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+        padding: 18px;
+        gap: 12px;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+      }
+      .controls-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      .panel-main {
+        flex: 1;
+      }
+      /* Show settings inline - no hamburger needed */
+      .menu-toggle-btn {
+        display: none;
+      }
+      .controls-menu {
+        display: flex;
+        flex-direction: column;
+        position: static;
+        max-height: none;
+        overflow: visible;
+        box-shadow: none;
+        padding: 0;
+        background: transparent;
+        border-radius: 0;
+        gap: 12px;
+      }
+      .panel-section {
+        align-items: stretch;
+      }
+      .options-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 6px;
+      }
+      .type-btn, .count-btn {
+        width: auto;
+        flex: 1 1 auto;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+      }
+      .emoji-btn {
+        width: auto;
+        flex: 0 0 auto;
+        padding: 6px 10px;
+        min-height: 42px;
+      }
+
+      /* ── HINT: bottom left ── */
+      .hint {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        transform: none;
+        text-align: left;
+        width: auto;
+      }
+      /* Hide mobile-only sections on desktop */
+      .mobile-only-sections { display: none !important; }
+      .mobile-menu-header { display: none !important; }
+      .mobile-title-bar { display: none !important; }
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+
+  <!-- MOBILE TITLE BAR (phones/tablets only) -->
+  <div class="mobile-title-bar"><span>EMOJI DROP</span></div>
+
+  <!-- HUD TOP LEFT -->
+  <div class="ui-overlay">
+    <h1>EMOJI DROP</h1>
+    <div class="hud">
+      <div class="hud-stats-row">
+        <div class="hud-item">
+          <span class="hud-label">Balance</span>
+          <span class="hud-value" id="score">$100</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">Level Tier</span>
+          <span class="level-badge" id="level-badge">Beginner</span>
+        </div>
+      </div>
+      <div class="hud-stats-row">
+        <div class="hud-item">
+          <span class="hud-label">Last Hit</span>
+          <span class="hud-value" id="last-win" style="color: #00f0ff;">0x</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="leaderboard-btn-under" id="toggle-leaderboard-btn">🏆 Leaderboard</button>
+
+    <div class="leaderboard-dropdown" id="leaderboard-dropdown">
+      <div class="leaderboard-title">TOP DROPPERS</div>
+      <div class="leaderboard-list" id="leaderboard-list"></div>
+    </div>
+  </div>
+
+  <!-- SPIN WHEEL MODAL -->
+  <div class="wheel-modal" id="wheel-modal">
+    <div style="font-size: 1.4rem; font-weight: 900; color: #ff007f;">OUT OF COINS!</div>
+    <div style="color: #cbd5e1; font-size: 0.85rem; text-align: center;">Spin the Emoji Wheel to get free coins!</div>
+    <div class="wheel-container" id="wheel-graphic">
+      <div class="wheel-center-btn" id="spin-wheel-btn">SPIN</div>
+    </div>
+    <button class="audio-btn" id="close-wheel-btn">CLOSE</button>
+  </div>
+
+  <!-- AUDIO CONTROLS TOP RIGHT (desktop only) -->
+  <div class="audio-player" id="desktop-audio-player">
+    <div class="audio-header">
+      <span>Synth Player</span>
+      <span id="audio-status" style="color: #00ff66;">● SFX ON · Music Paused</span>
+    </div>
+    <div class="track-title" id="track-title">Track 1: Moombahton Bounce</div>
+    <div class="audio-controls">
+      <button class="audio-btn active" id="toggle-sfx-btn">SFX: ON</button>
+      <button class="audio-btn" id="toggle-music-btn">▶ Play Synth</button>
+      <button class="audio-btn" id="next-track-btn">⏭ Next Track</button>
+    </div>
+  </div>
+
+  <div class="hint">Drag anywhere to rotate 360° | Click upper board to drop</div>
+
+  <!-- CONTROLS PANEL BOTTOM RIGHT -->
+  <div class="controls-panel">
+    <div class="controls-top">
+      <div class="panel-main">
+        <div class="panel-heading">
+          <span class="panel-title">Plinko</span>
+        </div>
+
+        <button class="drop-btn" id="drop-btn">DROP (1x = $10)</button>
+      </div>
+
+      <button class="menu-toggle-btn" id="menu-toggle-btn" aria-expanded="false" aria-label="Open settings menu">☰</button>
+    </div>
+
+    <div class="controls-menu" id="controls-menu">
+      <!-- ── MOBILE MENU HEADER (hidden on desktop) ── -->
+      <div class="mobile-menu-header">
+        <span class="mobile-menu-title">EMOJI DROP</span>
+        <span style="font-size:0.65rem;color:#38bdf8;font-weight:700;letter-spacing:1px;">360 SPACE EDITION</span>
+      </div>
+      <!-- ── MOBILE-ONLY: Stats, Leaderboard, Audio ── -->
+      <div class="mobile-only-sections">
+
+        <div class="panel-section">
+          <span class="section-title">Your Stats</span>
+          <div class="hud" style="width:100%;">
+            <div class="hud-stats-row">
+              <div class="hud-item">
+                <span class="hud-label">Balance</span>
+                <span class="hud-value" id="score-m">$100</span>
+              </div>
+              <div class="hud-item">
+                <span class="hud-label">Level Tier</span>
+                <span class="level-badge" id="level-badge-m">Beginner</span>
+              </div>
+              <div class="hud-item">
+                <span class="hud-label">Last Hit</span>
+                <span class="hud-value" id="last-win-m" style="color:#00f0ff;">0x</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <span class="section-title">🏆 Top Droppers</span>
+          <div class="leaderboard-list" id="leaderboard-list-m"></div>
+        </div>
+
+        <div class="panel-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span class="section-title">Synth Player</span>
+            <span id="audio-status-m" style="color:#00ff66;font-size:0.65rem;font-weight:700;">● SFX ON</span>
+          </div>
+          <div class="track-title" id="track-title-m" style="margin-bottom:8px;">Track 1: Moombahton Bounce</div>
+          <div class="audio-controls-row">
+            <button class="audio-btn active" id="toggle-sfx-btn-m">SFX: ON</button>
+            <button class="audio-btn" id="toggle-music-btn-m">▶ Play Synth</button>
+            <button class="audio-btn" id="next-track-btn-m">⏭ Next</button>
+          </div>
+        </div>
+
+        <div style="height:1px;background:rgba(0,240,255,0.15);width:100%;flex-shrink:0;"></div>
+      </div>
+      <!-- ── END MOBILE-ONLY ── -->
+
+      <div class="panel-section" id="menu-type-picker">
+        <span class="section-title">Drop Mode</span>
+        <div class="options-row" id="type-picker-menu">
+          <button class="type-btn active" data-type="ball">Metallic Ball</button>
+          <button class="type-btn" data-type="emoji">Actual Emoji</button>
+        </div>
+      </div>
+      <div class="panel-section" id="emoji-section" style="display: none;">
+        <span class="section-title">Unlocked Emojis</span>
+        <div class="options-row" id="emoji-picker">
+          <!-- Beginner Emojis Unlocked immediately -->
+          <button class="emoji-btn active" data-emoji="🔥">🔥</button>
+          <button class="emoji-btn" data-emoji="⚡">⚡</button>
+
+          <!-- Tier Locked Emojis -->
+          <button class="emoji-btn btn-disabled" id="emoji-intermediate-1" data-emoji="🚀">🚀 🔒</button>
+          <button class="emoji-btn btn-disabled" id="emoji-intermediate-2" data-emoji="💎">💎 🔒</button>
+
+          <button class="emoji-btn btn-disabled" id="emoji-pro-1" data-emoji="😎">😎 🔒</button>
+          <button class="emoji-btn btn-disabled" id="emoji-pro-2" data-emoji="🦄">🦄 🔒</button>
+
+          <button class="emoji-btn btn-disabled" id="emoji-expert-1" data-emoji="👾">👾 🔒</button>
+          <button class="emoji-btn btn-disabled" id="emoji-expert-2" data-emoji="👑">👑 🔒</button>
+        </div>
+      </div>
+
+      <div class="panel-section" id="ball-color-section">
+        <span class="section-title">Metallic Ball Color</span>
+        <div class="options-row" id="color-picker">
+          <div class="color-btn active" data-color="0x00f0ff" style="background: #00f0ff; color: #00f0ff;"></div>
+          <div class="color-btn" data-color="0xff007f" style="background: #ff007f; color: #ff007f;"></div>
+          <div class="color-btn" data-color="0x00ff66" style="background: #00ff66; color: #00ff66;"></div>
+          <div class="color-btn" data-color="0x7000ff" style="background: #7000ff; color: #7000ff;"></div>
+          <div class="color-btn" data-color="0xff3300" style="background: #ff3300; color: #ff3300;"></div>
+          <div class="color-btn" data-color="0xffffff" style="background: #ffffff; color: #ffffff;"></div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <span class="section-title">Drop Quantity</span>
+        <div class="options-row" id="count-picker">
+          <button class="count-btn active" data-count="1">1x</button>
+          <button class="count-btn btn-disabled" id="count-3" data-count="3">3x 🔒</button>
+          <button class="count-btn btn-disabled" id="count-5" data-count="5">5x 🔒</button>
+          <button class="count-btn btn-disabled" id="count-10" data-count="10">10x 🔒</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- GAME STATE ---
+    let score = 100;
+    let currentTier = "Beginner";
+    const dropCostPerItem = 10;
+    let selectedDropType = 'ball';
+    let selectedEmoji = '🔥';
+    let selectedBallColor = 0x00f0ff;
+    let selectedCount = 1;
+    const rows = 12;
+
+    const multipliers = [10, 3, 1.5, -0.1, -0.2, -0.1, 1.5, 3, 10];
+    const multColors = [0x00f0ff, 0xff007f, 0x00ff66, 0xd90429, 0x500210, 0xd90429, 0x00ff66, 0xff007f, 0x00f0ff];
+
+    // --- LEADERBOARD LOGIC ---
+    let leaderboardData = [
+      { name: "CyberKing 👑", score: 1420 },
+      { name: "NeonMaster ⚡", score: 890 },
+      { name: "YOU (Player)", score: 100, isUser: true },
+      { name: "PixelDrop 👾", score: 85 },
+      { name: "StarBounce ✨", score: 40 }
+    ];
+
+    async function loadLeaderboardFromPython() {
+      try {
+        const response = await fetch('/api/leaderboard');
+        if (!response.ok) throw new Error(`Leaderboard API returned ${response.status}`);
+        const remoteData = await response.json();
+        if (Array.isArray(remoteData) && remoteData.length) {
+          leaderboardData = remoteData.map(entry => ({
+            ...entry,
+            score: Number(entry.score) || 0,
+            isUser: Boolean(entry.isUser) || entry.name === 'YOU (Player)'
+          }));
+        }
+      } catch (error) {
+        console.info('Using local leaderboard data:', error);
+      }
+
+      const userObj = leaderboardData.find(d => d.isUser);
+      if (userObj) {
+        userObj.score = Math.round(score);
+      }
+      renderLeaderboard();
+    }
+
+    function renderLeaderboard() {
+      const userObj = leaderboardData.find(d => d.isUser);
+      if (userObj) userObj.score = Math.round(score);
+
+      leaderboardData.sort((a, b) => b.score - a.score);
+
+      ['leaderboard-list', 'leaderboard-list-m'].forEach(id => {
+        const listEl = document.getElementById(id);
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        leaderboardData.forEach((item, index) => {
+          const row = document.createElement('div');
+          row.className = `leaderboard-row ${item.isUser ? 'user-row' : ''}`;
+          row.innerHTML = `<span>${index + 1}. ${item.name}</span><span>$${item.score}</span>`;
+          listEl.appendChild(row);
+        });
+      });
+    }
+
+    // --- SYNTH AUDIO ENGINE ---
+    let audioCtx = null;
+    let sfxMuted = false;
+    let isPlayingMusic = false;
+    let currentTrackIdx = 0;
+    let musicTimer = null;
+    let musicStep = 0;
+
+    const synthTracks = [
+      { name: "Track 1: Moombahton Bounce", bpm: 110, bass: [55, 55, 73.42, 65.41], lead: [220, 261.63, 329.63, 392] },
+      { name: "Track 2: Tropical EDM Rush", bpm: 120, bass: [49, 49, 65.41, 58.27], lead: [196, 246.94, 293.66, 369.99] },
+      { name: "Track 3: Cyber Carnival Trap", bpm: 128, bass: [41.2, 55, 61.74, 49], lead: [164.81, 220, 247.48, 329.63] },
+      { name: "Track 4: Free Rap Flow", bpm: 88, bass: [55, 55, 65.41, 73.42], lead: [130.81, 146.83, 164.81], style: 'rap' }
+    ];
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playPegSFX() {
+      const freqs = [523.25, 659.25, 783.99, 1046.50];
+      if (sfxMuted || !audioCtx) return;
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freqs[Math.floor(Math.random() * freqs.length)], audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function playSlotSFX(isPositive) {
+      if (sfxMuted) return;
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = isPositive ? 'sine' : 'sawtooth';
+      osc.frequency.setValueAtTime(isPositive ? 587.33 : 180, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(isPositive ? 880 : 90, audioCtx.currentTime + 0.25);
+      
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.25);
+    }
+
+    function runMusicScheduler() {
+      if (!isPlayingMusic) return;
+      const track = synthTracks[currentTrackIdx];
+      const interval = (60 / track.bpm / 2) * 1000;
+
+      const bassFreq = track.bass[musicStep % track.bass.length];
+      const bassOsc = audioCtx.createOscillator();
+      const bassGain = audioCtx.createGain();
+      bassOsc.type = 'sawtooth';
+      bassOsc.frequency.setValueAtTime(bassFreq, audioCtx.currentTime);
+      bassGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      bassGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+      bassOsc.connect(bassGain);
+      bassGain.connect(audioCtx.destination);
+      bassOsc.start();
+      bassOsc.stop(audioCtx.currentTime + 0.2);
+
+      if (track.style === 'rap') {
+        const hatOsc = audioCtx.createOscillator();
+        const hatGain = audioCtx.createGain();
+        hatOsc.type = 'square';
+        hatOsc.frequency.setValueAtTime(12000, audioCtx.currentTime);
+        hatGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        hatGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.06);
+        hatOsc.connect(hatGain);
+        hatGain.connect(audioCtx.destination);
+        hatOsc.start();
+        hatOsc.stop(audioCtx.currentTime + 0.06);
+
+        if (musicStep % 4 === 1) {
+          const snareOsc = audioCtx.createOscillator();
+          const snareGain = audioCtx.createGain();
+          snareOsc.type = 'triangle';
+          snareOsc.frequency.setValueAtTime(220, audioCtx.currentTime);
+          snareGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          snareGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.14);
+          snareOsc.connect(snareGain);
+          snareGain.connect(audioCtx.destination);
+          snareOsc.start();
+          snareOsc.stop(audioCtx.currentTime + 0.14);
+        }
+      } else if (musicStep % 2 === 0) {
+        const leadFreq = track.lead[Math.floor(Math.random() * track.lead.length)];
+        const leadOsc = audioCtx.createOscillator();
+        const leadGain = audioCtx.createGain();
+        leadOsc.type = 'triangle';
+        leadOsc.frequency.setValueAtTime(leadFreq, audioCtx.currentTime);
+        leadGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        leadGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+        leadOsc.connect(leadGain);
+        leadGain.connect(audioCtx.destination);
+        leadOsc.start();
+        leadOsc.stop(audioCtx.currentTime + 0.15);
+      }
+
+      musicStep++;
+      musicTimer = setTimeout(runMusicScheduler, interval);
+    }
+
+    function updateAudioStatus() {
+      const sfxText = sfxMuted ? 'SFX OFF' : 'SFX ON';
+      const musicText = isPlayingMusic ? synthTracks[currentTrackIdx].name : 'Music Paused';
+      const text = `● ${sfxText} · ${musicText}`;
+      const statusEl = document.getElementById('audio-status');
+      if (statusEl) statusEl.textContent = text;
+      const statusMEl = document.getElementById('audio-status-m');
+      if (statusMEl) statusMEl.textContent = `● ${sfxText}`;
+    }
+
+    function toggleMusic() {
+      initAudio();
+      isPlayingMusic = !isPlayingMusic;
+      const label = isPlayingMusic ? '⏸ Pause Synth' : '▶ Play Synth';
+      const musicBtn = document.getElementById('toggle-music-btn');
+      if (musicBtn) musicBtn.textContent = label;
+      const musicBtnM = document.getElementById('toggle-music-btn-m');
+      if (musicBtnM) musicBtnM.textContent = label;
+      if (isPlayingMusic) {
+        musicStep = 0;
+        runMusicScheduler();
+      } else {
+        clearTimeout(musicTimer);
+      }
+      updateAudioStatus();
+    }
+
+    function nextTrack() {
+      currentTrackIdx = (currentTrackIdx + 1) % synthTracks.length;
+      const name = synthTracks[currentTrackIdx].name;
+      document.getElementById('track-title').textContent = name;
+      const trackM = document.getElementById('track-title-m');
+      if (trackM) trackM.textContent = name;
+      if (isPlayingMusic) {
+        clearTimeout(musicTimer);
+        musicStep = 0;
+        runMusicScheduler();
+      }
+      updateAudioStatus();
+    }
+
+    function toggleSFX() {
+      sfxMuted = !sfxMuted;
+      const label = sfxMuted ? 'SFX: OFF' : 'SFX: ON';
+      const sfxBtn = document.getElementById('toggle-sfx-btn');
+      if (sfxBtn) sfxBtn.textContent = label;
+      const sfxBtnM = document.getElementById('toggle-sfx-btn-m');
+      if (sfxBtnM) sfxBtnM.textContent = label;
+      updateAudioStatus();
+    }
+    document.getElementById('toggle-sfx-btn').addEventListener('click', toggleSFX);
+    document.getElementById('toggle-music-btn').addEventListener('click', toggleMusic);
+    document.getElementById('next-track-btn').addEventListener('click', nextTrack);
+
+    // Mobile hamburger audio buttons
+    const sfxBtnM = document.getElementById('toggle-sfx-btn-m');
+    const musicBtnM = document.getElementById('toggle-music-btn-m');
+    const nextBtnM = document.getElementById('next-track-btn-m');
+    if (sfxBtnM) sfxBtnM.addEventListener('click', toggleSFX);
+    if (musicBtnM) musicBtnM.addEventListener('click', toggleMusic);
+    if (nextBtnM) nextBtnM.addEventListener('click', nextTrack);
+    updateAudioStatus();
+    document.getElementById('drop-btn').textContent = `DROP (1x = $${dropCostPerItem})`;
+
+    document.getElementById('toggle-leaderboard-btn').addEventListener('click', () => {
+      document.getElementById('leaderboard-dropdown').classList.toggle('open');
+    });
+
+    const wheelModal = document.getElementById('wheel-modal');
+    const wheelGraphic = document.getElementById('wheel-graphic');
+    let isSpinning = false;
+
+    document.getElementById('spin-wheel-btn').addEventListener('click', () => {
+      if (isSpinning) return;
+      isSpinning = true;
+      const randomRot = 1440 + Math.floor(Math.random() * 360);
+      wheelGraphic.style.transform = `rotate(${randomRot}deg)`;
+
+      setTimeout(() => {
+        const rewards = [25, 50, 75, 150];
+        const won = rewards[Math.floor(Math.random() * rewards.length)];
+        score += won;
+        updateHUDAndUnlocks();
+        wheelModal.classList.remove('open');
+        wheelGraphic.style.transform = `rotate(0deg)`;
+        isSpinning = false;
+      }, 3200);
+    });
+
+    document.getElementById('close-wheel-btn').addEventListener('click', () => {
+      wheelModal.classList.remove('open');
+    });
+
+    // --- THREE.JS & CANNON SETUP ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x02040a, 0.01);
+
+    const world = new CANNON.World();
+    world.gravity.set(0, -28, 0);
+    world.broadphase = new CANNON.NaiveBroadphase();
+    world.solver.iterations = 12;
+
+    const ballMaterial = new CANNON.Material('ball');
+    const pegMaterial = new CANNON.Material('peg');
+
+    // FAIR PLAY PHYSICS BALANCE (EQUAL RESTITUION / ZERO FRICTION JITTER)
+    world.addContactMaterial(new CANNON.ContactMaterial(ballMaterial, pegMaterial, {
+      friction: 0.0,
+      restitution: 0.72
+    }));
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1, 23);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.4;
+
+    if (container) {
+    container.appendChild(renderer.domElement);
+      console.log('Three.js canvas element created and appended.');
+      console.log('Canvas width:', renderer.domElement.width, 'height:', renderer.domElement.height);
+    } else {
+      console.error('Error: #canvas-container not found. Three.js renderer cannot be appended.');
+    }
+
+    // --- BACKGROUND SPACE GROUP (GRID, STARS & 3D PLANETS) ---
+    const bgGroup = new THREE.Group();
+    scene.add(bgGroup);
+
+    const gridHelper = new THREE.GridHelper(60, 30, 0x00f0ff, 0x7000ff);
+    gridHelper.position.set(0, -10, -12);
+    bgGroup.add(gridHelper);
+
+    // 3D PLANETS IN BACKGROUND
+    const planetGroup = new THREE.Group();
+    bgGroup.add(planetGroup);
+
+    // Main Ringed Planet
+    const planetGeo = new THREE.SphereGeometry(3.5, 32, 32);
+    const planetMat = new THREE.MeshStandardMaterial({ 
+      color: 0x7000ff, roughness: 0.6, metalness: 0.2, emissive: 0x220055, emissiveIntensity: 0.4 
+    });
+    const planetMesh = new THREE.Mesh(planetGeo, planetMat);
+    planetMesh.position.set(-16, 8, -20);
+    planetGroup.add(planetMesh);
+
+    const planetRingGeo = new THREE.RingGeometry(4.5, 6.5, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+    const ringMesh = new THREE.Mesh(planetRingGeo, ringMat);
+    ringMesh.rotation.x = Math.PI / 3;
+    planetMesh.add(ringMesh);
+ 
+    // Secondary Gas Moon
+    const moonGeo = new THREE.SphereGeometry(1.8, 32, 32);
+    const moonMat = new THREE.MeshStandardMaterial({ color: 0xff007f, roughness: 0.5, emissive: 0x440022 });
+    const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+    moonMesh.position.set(18, -4, -18);
+    planetGroup.add(moonMesh);
+
+    // Morphing Background Emoji Stars
+    const bgEmotesList = ['✨', '🌟', '⭐', '💫', '🌌', '🎈', '🎉', '🚀', '💎'];
+    const emojiStars = [];
+
+    function makeEmojiTexture(char) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.font = '40px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(char, 32, 32);
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    for (let i = 0; i < 45; i++) {
+      const char = bgEmotesList[Math.floor(Math.random() * bgEmotesList.length)];
+      const texture = makeEmojiTexture(char);
+
+      // First 12 emojis float in FRONT of the board (z = 1.5..3) for visible effect
+      const isFg = i < 12;
+      const sz = isFg
+        ? 1.5 + Math.random() * 1.5          // 1.5 – 3 (foreground)
+        : -12 + (Math.random() - 0.5) * 8;   // background
+
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(isFg ? 0.7 : 0.9, isFg ? 0.7 : 0.9),
+        new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: isFg ? 0.85 : 0.75 })
+      );
+
+      mesh.position.set(
+        (Math.random() - 0.5) * (isFg ? 22 : 45),
+        (Math.random() - 0.5) * (isFg ? 20 : 35),
+        sz
+      );
+      
+      bgGroup.add(mesh);
+      emojiStars.push({ 
+        mesh, 
+        vx: (Math.random() - 0.5) * 0.03, 
+        vy: (Math.random() - 0.5) * 0.03,
+        rotSpeed: (Math.random() - 0.5) * 0.02,
+        timer: Math.random() * 200
+      });
+    }
+
+    // LIGHTING
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const cyanLight = new THREE.PointLight(0x00f0ff, 5, 30);
+    cyanLight.position.set(-10, 10, 10);
+    scene.add(cyanLight);
+
+    const pinkLight = new THREE.PointLight(0xff007f, 5, 30);
+    pinkLight.position.set(10, 10, 10);
+    scene.add(pinkLight);
+
+    // --- DUAL-SIDED SYMMETRICAL 360° GLASS BOARD ---
+    const boardWidth = 12;
+    const boardHeight = 16;
+    const pegRadius = 0.12;
+    const itemRadius = 0.18;
+
+    const glassMat = new THREE.MeshPhysicalMaterial({ 
+      color: 0x071126, transmission: 0.88, opacity: 0.9, transparent: true, roughness: 0.05, metalness: 0.2, ior: 1.5, clearcoat: 1.0, side: THREE.DoubleSide
+    });
+
+    const backMesh = new THREE.Mesh(new THREE.BoxGeometry(boardWidth, boardHeight, 0.2), glassMat);
+    backMesh.position.z = 0;
+    scene.add(backMesh);
+
+    // Front/Back Collision Bounds
+    const backBody = new CANNON.Body({ mass: 0, material: pegMaterial });
+    backBody.addShape(new CANNON.Box(new CANNON.Vec3(boardWidth / 2, boardHeight / 2, 0.25)));
+    backBody.position.set(0, 0, -0.6);
+    world.addBody(backBody);
+
+    const frontBody = new CANNON.Body({ mass: 0, material: pegMaterial });
+    frontBody.addShape(new CANNON.Box(new CANNON.Vec3(boardWidth / 2, boardHeight / 2, 0.1)));
+    frontBody.position.set(0, 0, 0.6);
+    world.addBody(frontBody);
+
+    [-boardWidth / 2, boardWidth / 2].forEach(x => {
+      const wallBody = new CANNON.Body({ mass: 0, material: pegMaterial });
+      wallBody.addShape(new CANNON.Box(new CANNON.Vec3(0.25, boardHeight / 2, 1)));
+      wallBody.position.set(x, 0, 0);
+      world.addBody(wallBody);
+    });
+
+    // PEGS EXTENDING SYMMETRICALLY TO FRONT AND BACK FOR 360 ROTATION
+    const pegGeo = new THREE.CylinderGeometry(pegRadius, pegRadius, 1.2, 16);
+    pegGeo.rotateX(Math.PI / 2);
+
+    const pegRingGeo = new THREE.TorusGeometry(pegRadius * 1.5, 0.025, 8, 24);
+    const animatedRings = [];
+
+    const startY = 6.2;
+    const spacingY = 0.85;
+    const spacingX = 0.85;
+    const boardSideOffsets = [0, -0.45];
+
+    for (let r = 0; r < rows; r++) {
+      const count = (r % 2 === 0) ? 11 : 10;
+      const startX = -((count - 1) * spacingX) / 2;
+      const y = startY - r * spacingY;
+
+      for (let c = 0; c < count; c++) {
+        const x = startX + c * spacingX;
+
+        boardSideOffsets.forEach(sideZ => {
+          const pegMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.98, roughness: 0.02, emissive: 0x00f0ff, emissiveIntensity: 0.3 });
+          const pegMesh = new THREE.Mesh(pegGeo, pegMat);
+          pegMesh.position.set(x, y, sideZ);
+          scene.add(pegMesh);
+
+          // Front & Back Neon Halo Rings for 360 Symmetrical Visuals
+          [-0.15, 0.15].forEach(zOffset => {
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true });
+            const ringMesh = new THREE.Mesh(pegRingGeo, ringMat);
+            ringMesh.position.set(x, y, sideZ + zOffset);
+            scene.add(ringMesh);
+            animatedRings.push({ mesh: ringMesh, mat: ringMat, pegMat });
+          });
+
+          const pegBody = new CANNON.Body({ mass: 0, material: pegMaterial });
+          pegBody.addShape(new CANNON.Sphere(pegRadius * 0.95));
+          pegBody.position.set(x, y, sideZ);
+
+          pegBody.addEventListener('collide', (e) => {
+            if (e.body.material.name === 'ball') {
+              playPegSFX();
+
+              pegMat.emissive.setHex(0xff007f);
+              setTimeout(() => { pegMat.emissive.setHex(0x00f0ff); }, 180);
+
+              spawnBigLightEmote(x, y);
+            }
+          });
+
+          world.addBody(pegBody);
+        });
+      }
+    }
+
+    // MULTIPLIER BOXES
+    const slots = [];
+    const slotLabels = [];
+    const totalSlots = multipliers.length;
+    const slotWidth = (boardWidth - 0.5) / totalSlots;
+    const slotStartY = -boardHeight / 2 + 1;
+
+    multipliers.forEach((mult, i) => {
+      const x = -boardWidth / 2 + 0.25 + slotWidth * i + slotWidth / 2;
+
+      const slotGeo = new THREE.BoxGeometry(slotWidth - 0.1, 1.2, 0.8);
+      const slotMat = new THREE.MeshStandardMaterial({ 
+        color: multColors[i], emissive: multColors[i], emissiveIntensity: 0.6, metalness: 0.95, roughness: 0.05 
+      });
+      const slotMesh = new THREE.Mesh(slotGeo, slotMat);
+      slotMesh.position.set(x, slotStartY, 0);
+      scene.add(slotMesh);
+
+      const textCanvas = document.createElement('canvas');
+      textCanvas.width = 128;
+      textCanvas.height = 128;
+      const ctx = textCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'Bold 44px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${mult}x`, 64, 64);
+
+      const labelTex = new THREE.CanvasTexture(textCanvas);
+      const labelGeo = new THREE.PlaneGeometry(slotWidth * 0.8, 0.8);
+      const labelMatShared = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true, side: THREE.DoubleSide });
+
+      // Front label
+      const labelFront = new THREE.Mesh(labelGeo, labelMatShared);
+      labelFront.position.set(x, slotStartY, 0.42);
+      scene.add(labelFront);
+      slotLabels.push(labelFront);
+
+      // Back label — same texture, sits on the rear face of the box
+      const labelBack = new THREE.Mesh(labelGeo, labelMatShared);
+      labelBack.position.set(x, slotStartY, -0.42);
+      scene.add(labelBack);
+      slotLabels.push(labelBack);
+
+      slots.push({ x, width: slotWidth, mult, mesh: slotMesh, mat: slotMat });
+    });
+
+    // FLOATING LIGHT EMOJIS & SCORES
+    const activeFloatingItems = [];
+    const pegImpactEmotes = ['💥', '🔥', '⚡', '✨', '🎯', '🚀', '💫'];
+
+    function spawnBigLightEmote(x, y) {
+      const char = pegImpactEmotes[Math.floor(Math.random() * pegImpactEmotes.length)];
+      const texture = makeEmojiTexture(char);
+
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.2, 1.2),
+        new THREE.MeshBasicMaterial({ map: texture, transparent: true })
+      );
+      mesh.position.set(x, y, 0.5);
+
+      scene.add(mesh);
+      activeFloatingItems.push({ mesh, vy: 0.04, scaleSpeed: 0.02, opacity: 1.0, life: 0, maxLife: 35 });
+    }
+
+    function spawnFloatingScore(x, y, netAmount) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+
+      const isPositive = netAmount >= 0;
+      ctx.font = 'Bold 52px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = isPositive ? '#00ff66' : '#ff0055';
+      ctx.shadowColor = isPositive ? '#00ff66' : '#ff0055';
+      ctx.shadowBlur = 14;
+      ctx.fillText(isPositive ? `+$${netAmount.toFixed(1)}` : `-$${Math.abs(netAmount).toFixed(1)}`, 128, 64);
+
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(2.0, 1.0),
+        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true })
+      );
+      mesh.position.set(x, y + 0.8, 0.8);
+
+      scene.add(mesh);
+      activeFloatingItems.push({ mesh, vy: 0.04, opacity: 1.0, life: 0, maxLife: 50 });
+    }
+
+    // SPHERES AND 3D EMOJI CREATION
+    const activeDroppingItems = [];
+    const sphereGeo = new THREE.SphereGeometry(itemRadius, 32, 32);
+
+    function createEmojiSphereTexture(emojiChar) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+
+      ctx.clearRect(0, 0, 256, 256);
+
+      const grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 120);
+      grad.addColorStop(0, '#00f0ff');
+      grad.addColorStop(0.7, '#ff007f');
+      grad.addColorStop(1, '#7000ff');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(128, 128, 120, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+
+      ctx.font = '140px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(emojiChar, 128, 128);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    function spawnSingleItem(customX) {
+      const x = customX ?? ((Math.random() - 0.5) * 1.5);
+      const y = 7.2;
+
+      let mesh;
+      if (selectedDropType === 'ball') {
+        const ballMat = new THREE.MeshStandardMaterial({ 
+          color: selectedBallColor, metalness: 0.98, roughness: 0.02, emissive: selectedBallColor, emissiveIntensity: 0.5
+        });
+        mesh = new THREE.Mesh(sphereGeo, ballMat);
+      } else {
+        const emojiTex = createEmojiSphereTexture(selectedEmoji);
+        const emojiMat = new THREE.MeshStandardMaterial({
+          map: emojiTex,
+          metalness: 0.2,
+          roughness: 0.2,
+          emissive: 0xffffff,
+          emissiveIntensity: 0.2
+        });
+        mesh = new THREE.Mesh(sphereGeo, emojiMat);
+      }
+
+      mesh.castShadow = true;
+      scene.add(mesh);
+
+      const body = new CANNON.Body({ mass: 1, material: ballMaterial, linearDamping: 0.05, angularDamping: 0.05 });
+      body.addShape(new CANNON.Sphere(itemRadius));
+      body.position.set(x, y, 0);
+
+      // BALANCED FAIR-PLAY DROP VELOCITY (GAUSSIAN JITTER)
+      body.velocity.set((Math.random() - 0.5) * 0.3, -2, 0);
+      
+      world.addBody(body);
+      activeDroppingItems.push({ mesh, body });
+    }
+
+    function triggerMultiDrop(customX) {
+      const totalCost = dropCostPerItem * selectedCount;
+      if (score < totalCost) {
+        wheelModal.classList.add('open');
+        return;
+      }
+      initAudio();
+
+      score -= totalCost;
+      updateHUDAndUnlocks();
+
+      for (let i = 0; i < selectedCount; i++) {
+        setTimeout(() => {
+          const offsetX = customX ? customX + (Math.random() - 0.5) * 0.4 : null;
+          spawnSingleItem(offsetX);
+        }, i * 120);
+      }
+    }
+
+    // LEVEL PROGRESSION & UNLOCK LOGIC
+    function updateHUDAndUnlocks() {
+      const roundedScore = Math.round(score);
+      document.getElementById('score').textContent = `$${roundedScore}`;
+      const scoreMEl = document.getElementById('score-m');
+      if (scoreMEl) scoreMEl.textContent = `$${roundedScore}`;
+
+      renderLeaderboard();
+
+      const badgeEl = document.getElementById('level-badge');
+      const count3 = document.getElementById('count-3');
+      const count5 = document.getElementById('count-5');
+      const count10 = document.getElementById('count-10');
+
+      const emojiInter1 = document.getElementById('emoji-intermediate-1');
+      const emojiInter2 = document.getElementById('emoji-intermediate-2');
+
+      const emojiPro1 = document.getElementById('emoji-pro-1');
+      const emojiPro2 = document.getElementById('emoji-pro-2');
+
+      const emojiExp1 = document.getElementById('emoji-expert-1');
+      const emojiExp2 = document.getElementById('emoji-expert-2');
+
+      if (score >= 1500) {
+        currentTier = "Expert Rank";
+        badgeEl.style.background = "linear-gradient(135deg, #00ff66, #00f0ff)";
+        unlockBtn(count10, "10x");
+        unlockBtn(count5, "5x");
+        unlockBtn(count3, "3x");
+
+        unlockEmojiBtn(emojiInter1, "🚀");
+        unlockEmojiBtn(emojiInter2, "💎");
+        unlockEmojiBtn(emojiPro1, "😎");
+        unlockEmojiBtn(emojiPro2, "🦄");
+        unlockEmojiBtn(emojiExp1, "👾");
+        unlockEmojiBtn(emojiExp2, "👑");
+      } else if (score >= 700) {
+        currentTier = "Pro Rank";
+        badgeEl.style.background = "linear-gradient(135deg, #ff007f, #00f0ff)";
+        unlockBtn(count5, "5x");
+        unlockBtn(count3, "3x");
+
+        unlockEmojiBtn(emojiInter1, "🚀");
+        unlockEmojiBtn(emojiInter2, "💎");
+        unlockEmojiBtn(emojiPro1, "😎");
+        unlockEmojiBtn(emojiPro2, "🦄");
+      } else if (score >= 300) {
+        currentTier = "Intermediate";
+        badgeEl.style.background = "linear-gradient(135deg, #7000ff, #ff007f)";
+        unlockBtn(count3, "3x");
+
+        unlockEmojiBtn(emojiInter1, "🚀");
+        unlockEmojiBtn(emojiInter2, "💎");
+      } else {
+        currentTier = "Beginner";
+        badgeEl.style.background = "linear-gradient(135deg, #1e2e52, #475569)";
+      }
+
+      badgeEl.textContent = currentTier;
+      const badgeMEl = document.getElementById('level-badge-m');
+      if (badgeMEl) { badgeMEl.textContent = currentTier; badgeMEl.style.background = badgeEl.style.background; }
+    }
+
+    function unlockBtn(btnEl, labelText) {
+      btnEl.classList.remove('btn-disabled');
+      btnEl.textContent = labelText;
+    }
+
+    function unlockEmojiBtn(btnEl, emojiChar) {
+      btnEl.classList.remove('btn-disabled');
+      btnEl.textContent = emojiChar;
+    }
+
+    // UI CONTROLS CLICK LISTENERS
+    document.querySelectorAll('.type-btn[data-type]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.type-btn[data-type]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedDropType = btn.getAttribute('data-type');
+
+        document.getElementById('emoji-section').style.display = selectedDropType === 'emoji' ? 'flex' : 'none';
+        document.getElementById('ball-color-section').style.display = selectedDropType === 'ball' ? 'flex' : 'none';
+      });
+    });
+
+    document.querySelectorAll('#emoji-picker .emoji-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.classList.contains('btn-disabled')) return;
+        document.querySelectorAll('#emoji-picker .emoji-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedEmoji = btn.getAttribute('data-emoji');
+      });
+    });
+
+    document.querySelectorAll('#color-picker .color-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#color-picker .color-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedBallColor = parseInt(btn.getAttribute('data-color'));
+      });
+    });
+
+    document.querySelectorAll('#count-picker .count-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.classList.contains('btn-disabled')) return;
+        document.querySelectorAll('#count-picker .count-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedCount = parseInt(btn.getAttribute('data-count'));
+        document.getElementById('drop-btn').textContent = `DROP (${selectedCount}x = $${selectedCount * dropCostPerItem})`;
+      });
+    });
+
+    document.getElementById('drop-btn').addEventListener('click', () => triggerMultiDrop());
+
+    const menuToggleBtn = document.getElementById('menu-toggle-btn');
+    const controlsMenu = document.getElementById('controls-menu');
+    if (menuToggleBtn && controlsMenu) {
+      menuToggleBtn.addEventListener('click', () => {
+        const opened = controlsMenu.classList.toggle('open');
+        menuToggleBtn.setAttribute('aria-expanded', opened.toString());
+        menuToggleBtn.textContent = opened ? '✕' : '☰';
+      });
+    }
+
+    // RAYCAST CLICK TO DROP + CROSS-DEVICE DRAG
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    let isDragging = false;
+    let previousPointerX = 0;
+    let pointerMoved = false;
+
+    window.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.controls-panel') || e.target.closest('.audio-player') || e.target.closest('.ui-overlay') || e.target.closest('.wheel-modal') || e.target.tagName === 'BUTTON') return;
+
+      isDragging = true;
+      pointerMoved = false;
+      previousPointerX = e.clientX;
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - previousPointerX;
+      if (Math.abs(deltaX) > 2) pointerMoved = true;
+      scene.rotation.y += deltaX * 0.008;
+      previousPointerX = e.clientX;
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (isDragging && !pointerMoved && !e.target.closest('.controls-panel') && !e.target.closest('.audio-player') && !e.target.closest('.ui-overlay') && !e.target.closest('.wheel-modal') && e.target.tagName !== 'BUTTON') {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(backMesh);
+
+        if (intersects.length > 0) {
+          const clickPoint = intersects[0].point;
+          if (clickPoint.y > 3) {
+            triggerMultiDrop(Math.max(-4.5, Math.min(4.5, clickPoint.x)));
+          }
+        }
+      }
+      isDragging = false;
+    });
+
+    window.addEventListener('pointercancel', () => {
+      isDragging = false;
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      updateCameraZoom();
+    });
+
+    function updateCameraZoom() {
+      // On mobile/tablet zoom out so the multiplier boxes at the bottom are visible
+      camera.position.z = window.innerWidth <= 1024 ? 30 : 23;
+      camera.updateProjectionMatrix();
+    }
+    updateCameraZoom();
+
+    // MAIN ANIMATION LOOP
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const delta = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.getElapsedTime();
+      
+      try { // Wrap the entire animation logic in a try-catch block
+        world.step(1 / 60, delta, 3);
+        gridHelper.position.z = -12 + (Math.sin(elapsed) * 0.5);
+
+      // Rotate Planets
+      planetGroup.rotation.y += 0.002;
+
+      // Color-Shifting Glass Plinko Backboard
+      const colorHue = (elapsed * 0.1) % 1;
+      glassMat.color.setHSL(colorHue, 0.8, 0.15);
+
+      // Color-Shifting Peg Rings & Box Pulsing
+      animatedRings.forEach((r, idx) => { 
+        r.mesh.rotation.z += 0.02; 
+        const ringHue = (colorHue + idx * 0.01) % 1;
+        r.mat.color.setHSL(ringHue, 0.9, 0.5);
+      });
+
+      slots.forEach((s, idx) => {
+        if (s.mult > 0) {
+          const slotHue = (colorHue + idx * 0.08) % 1;
+          s.mat.color.setHSL(slotHue, 0.9, 0.4);
+          s.mat.emissive.setHSL(slotHue, 0.9, 0.4);
+        }
+      });
+
+      // Animate & Morph Background Emoji Stars — billboard to always face camera
+      emojiStars.forEach(s => {
+        s.mesh.position.x += s.vx;
+        s.mesh.position.y += s.vy;
+        s.mesh.rotation.z += s.rotSpeed;
+        s.mesh.rotation.y = -scene.rotation.y; // counter-rotate so emoji faces camera
+        s.timer++;
+
+        if (s.timer > 300) {
+          const newChar = bgEmotesList[Math.floor(Math.random() * bgEmotesList.length)];
+          s.mesh.material.map = makeEmojiTexture(newChar);
+          s.timer = 0;
+        }
+
+        if (Math.abs(s.mesh.position.x) > 22) s.vx *= -1;
+        if (Math.abs(s.mesh.position.y) > 18) s.vy *= -1;
+      });
+
+      // Billboard slot-label numbers so they always face the camera
+      slotLabels.forEach(lbl => { lbl.rotation.y = -scene.rotation.y; });
+
+      // Keep floating impact emojis facing camera too
+      activeFloatingItems.forEach(item => { item.mesh.rotation.y = -scene.rotation.y; });
+
+      // Animate Floating Light Emojis
+      for (let i = activeFloatingItems.length - 1; i >= 0; i--) {
+        const item = activeFloatingItems[i];
+        item.mesh.position.y += item.vy;
+        
+        if (item.scaleSpeed) {
+          item.mesh.scale.x += item.scaleSpeed;
+          item.mesh.scale.y += item.scaleSpeed;
+        }
+
+        item.life++;
+        item.opacity -= 0.025;
+        item.mesh.material.opacity = Math.max(0, item.opacity);
+
+        if (item.opacity <= 0 || item.life > item.maxLife) {
+          scene.remove(item.mesh);
+          activeFloatingItems.splice(i, 1);
+        }
+      }
+
+      // Animate Active Drops
+      for (let i = activeDroppingItems.length - 1; i >= 0; i--) {
+        const item = activeDroppingItems[i];
+        
+        item.body.position.z *= 0.8;
+        item.body.velocity.z *= 0.5;
+
+        item.mesh.position.copy(item.body.position);
+        item.mesh.quaternion.copy(item.body.quaternion);
+
+        if (item.body.position.y <= slotStartY + 0.4) {
+          const itemX = item.body.position.x;
+          const slot = slots.find(s => Math.abs(itemX - s.x) <= s.width / 2);
+          
+          if (slot) {
+            const payout = slot.mult >= 0 ? dropCostPerItem * slot.mult : dropCostPerItem * slot.mult;
+            score += payout;
+
+            playSlotSFX(payout >= 0);
+
+            const lastWinEl = document.getElementById('last-win');
+            lastWinEl.textContent = `${slot.mult}x (${payout >= 0 ? '+' : ''}$${payout.toFixed(1)})`;
+            lastWinEl.style.color = payout >= 0 ? '#00ff66' : '#ff0055';
+            const lastWinMEl = document.getElementById('last-win-m');
+            if (lastWinMEl) { lastWinMEl.textContent = lastWinEl.textContent; lastWinMEl.style.color = lastWinEl.style.color; }
+            
+            updateHUDAndUnlocks();
+
+            spawnFloatingScore(slot.x, slotStartY, payout);
+
+            // Dynamic Box Bounce
+            slot.mesh.position.y = slotStartY - 0.2;
+            slot.mat.emissiveIntensity = 2.5;
+            setTimeout(() => { 
+              slot.mesh.position.y = slotStartY;
+              slot.mat.emissiveIntensity = 0.6; 
+            }, 250);
+          }
+
+          world.remove(item.body);
+          scene.remove(item.mesh);
+          activeDroppingItems.splice(i, 1);
+        }
+      }
+
+      renderer.render(scene, camera);
+    } catch (e) {
+        console.error(e)
+    }
+    }
+
+    renderLeaderboard();
+    animate();
+  </script>
+</body>
+</html>
