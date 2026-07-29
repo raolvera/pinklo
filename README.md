@@ -32,6 +32,25 @@ python server.py
 http://127.0.0.1:8000/index.html
 ```
 
+## Play on GitHub Pages
+
+The game is also ready to be published as a GitHub Pages site so others can play it directly from a URL.
+
+### What to do
+
+1. Open your repository on GitHub
+2. Go to Settings → Pages
+3. Under "Build and deployment", choose "GitHub Actions"
+4. Push to the `master` branch and wait for the workflow to finish
+
+Once deployed, the site will be available at:
+
+```text
+https://<your-username>.github.io/pinklo/
+```
+
+Note: the Python leaderboard backend is only used when running locally. On GitHub Pages, the game uses the built-in demo leaderboard so the experience still works as a static site.
+
 ## Project Structure
 
 - `index.html` — the full game UI, 3D scene, and game logic
